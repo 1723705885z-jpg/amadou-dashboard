@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Deep Dive: Antreas Pantazi</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0612;
+            --gold: #f5c87a;
+            --rose: #ff3d8a;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --text: #e8e0f0;
+            --border: rgba(245, 200, 122, 0.2);
+            --gradient-gold: linear-gradient(135deg, #f5c87a, #d4a75a);
+            --gradient-rose: linear-gradient(135deg, #ff3d8a, #d61e6c);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Banner */
+        .warning-banner {
+            background: var(--gradient-rose);
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(255, 61, 138, 0.4);
+            text-transform: uppercase;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(10, 6, 18, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 45px;
+            z-index: 999;
+        }
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+            opacity: 0.7;
+        }
+        nav a:hover { color: var(--gold); opacity: 1; }
+
+        /* Layout */
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        section { margin-bottom: 80px; scroll-margin-top: 120px; }
+        
+        h1, h2, h3 { color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--rose);
+            padding-left: 15px;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        /* Charts */
+        .chart-container { position: relative; height: 300px; width: 100%; }
+
+        /* Timeline */
+        .timeline { border-left: 2px solid var(--gold); padding-left: 20px; margin-left: 10px; }
+        .timeline-item { margin-bottom: 25px; position: relative; }
+        .timeline-item::before {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: var(--rose);
+            border-radius: 50%;
+            position: absolute;
+            left: -27px;
+            top: 5px;
+            box-shadow: 0 0 10px var(--rose);
+        }
+        .time { color: var(--gold); font-weight: bold; font-size: 0.9rem; margin-right: 10px; }
+
+        /* Quote */
+        blockquote {
+            background: rgba(245, 200, 122, 0.05);
+            border-left: 4px solid var(--gold);
+            padding: 15px 20px;
+            margin: 20px 0;
+            font-style: italic;
+            position: relative;
+        }
+        blockquote::after { content: '”'; position: absolute; right: 20px; bottom: 0; font-size: 60px; opacity: 0.1; }
+
+        /* Action Cards */
+        .action-card { border-top: 5px solid var(--gold); }
+        .action-card.p0 { border-top-color: var(--rose); }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .badge-p0 { background: var(--rose); color: white; }
+        .badge-p1 { background: var(--gold); color: black; }
+        .badge-p2 { background: #555; color: white; }
+
+        .copy-text {
+            background: #1a1525;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            display: block;
+            border: 1px dashed var(--border);
+        }
+
+        /* Summary Alert */
+        .summary-alert {
+            background: rgba(245, 200, 122, 0.1);
+            border: 2px solid var(--gold);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+    </style>
+</head>
+<body>
+    <div class="warning-banner">
+        ⚠️ 高风险新账号 (High Risk New Account) | 注册时间：2026-07-13 | 数字足迹极度缺失
+    </div>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">档案概览</a></li>
+            <li><a href="#persona">人物画像</a></li>
+            <li><a href="#brand">品牌分析</a></li>
+            <li><a href="#behavior">行为特征</a></li>
+            <li><a href="#chat">沟通记录</a></li>
+            <li><a href="#sales">销售绩效</a></li>
+            <li><a href="#peer">同伴对比</a></li>
+            <li><a href="#risk">风险评估</a></li>
+            <li><a href="#action">行动指南</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <!-- #overview -->
+        <section id="overview">
+            <div class="section-header">
+                <h2>#overview 档案概览</h2>
+            </div>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>基本身份</h3>
+                    <p style="margin-top:15px;"><strong>姓名:</strong> Antreas Pantazi</p>
+                    <p><strong>国家:</strong> 塞浦路斯 🇨🇾 (Cyprus)</p>
+                    <p><strong>城市:</strong> Nicosia (尼科西亚)</p>
+                    <p><strong>注册日期:</strong> 2026-07-13</p>
+                    <p><strong>等级:</strong> New Account (L0)</p>
+                    <p><strong>AliId:</strong> 4500095963826</p>
+                </div>
+                <div class="card">
+                    <h3>雷达映射</h3>
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>核心故事</h3>
+                    <p style="font-size: 0.9rem; opacity: 0.9; margin-top: 10px;">
+                        一位公网几乎零足迹的塞浦路斯人，于2026-07-13注册，次日即发起极度专业的品牌创立询盘。
+                        指定Seiko VK63机芯、蓝宝石玻璃、10ATM等高规格参数，术语极其精准。
+                        身份真实性存疑（DRCOR无记录），但商业意图表现非常强烈。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #persona -->
+        <section id="persona">
+            <div class="section-header">
+                <h2>#persona 人物画像</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>数字足迹 (OSINT)</h3>
+                    <ul style="margin-top:15px; list-style:none;">
+                        <li style="margin-bottom:10px; border-bottom: 1px solid var(--border); padding-bottom:5px;">
+                            <span style="color:var(--rose)">✘</span> <strong>工商状态:</strong> DRCOR未查到相关注册公司。
+                        </li>
+                        <li style="margin-bottom:10px; border-bottom: 1px solid var(--border); padding-bottom:5px;">
+                            <span style="color:var(--rose)">✘</span> <strong>LinkedIn:</strong> 搜索无果，无职业社交背景。
+                        </li>
+                        <li style="margin-bottom:10px; border-bottom: 1px solid var(--border); padding-bottom:5px;">
+                            <span style="color:var(--gold)">✔</span> <strong>Facebook:</strong> 存在同名个人账号，但无商业信息。
+                        </li>
+                        <li style="margin-bottom:10px; border-bottom: 1px solid var(--border); padding-bottom:5px;">
+                            <span style="color:var(--gold)">✔</span> <strong>唯一线索:</strong> 2022年塞浦路斯政府公报同名地址 (Mnasiadou 6, Nicosia)。
+                        </li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>画像标签</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top:15px;">
+                        <span class="badge" style="border:1px solid var(--rose); color:var(--rose)">账号极新</span>
+                        <span class="badge" style="border:1px solid var(--gold); color:var(--gold)">高专业度买家</span>
+                        <span class="badge" style="border:1px solid var(--rose); color:var(--rose)">身份孤岛</span>
+                        <span class="badge" style="border:1px solid var(--gold); color:var(--gold)">创业品牌主</span>
+                        <span class="badge" style="border:1px solid #555; color:#aaa">塞浦路斯金融背景?</span>
+                    </div>
+                    <p style="margin-top:20px; font-size:0.85rem;">身份可信度评级：<span style="color:var(--rose); font-weight:bold;">LOW</span> (需防范骗样或弃单风险)</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #brand -->
+        <section id="brand">
+            <div class="section-header">
+                <h2>#brand 品牌与品类</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>意向品牌画像</h3>
+                    <div class="chart-container">
+                        <canvas id="brandStageChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>关注品类偏好</h3>
+                    <div class="chart-container">
+                        <canvas id="catBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- #behavior -->
+        <section id="behavior">
+            <div class="section-header">
+                <h2>#behavior 行为特征</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>沟通节奏</h3>
+                    <div class="chart-container">
+                        <canvas id="chatBarChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>关键行为记录</h3>
+                    <ul style="margin-top:15px; list-style:none;">
+                        <li style="margin-bottom:10px;">🕒 <strong>首发极详细询盘:</strong> 明确数量、材质、机芯，非普通打招呼。</li>
+                        <li style="margin-bottom:10px;">🚫 <strong>拒绝视频通话:</strong> 在19:03分挂断视频，倾向于纯文字沟通，保持私密。</li>
+                        <li style="margin-bottom:10px;">💡 <strong>指定具体型号:</strong> 主动纠正机芯型号 (Seiko VK63 vs VK64)，展现行内知识。</li>
+                        <li style="margin-bottom:10px;">📉 <strong>成本意识:</strong> 明确表示使用公模 (Open Mold) 以节省首批创业成本。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        <!-- #chat -->
+        <section id="chat">
+            <div class="section-header">
+                <h2>#chat 沟通记录 & 时间轴</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>沟通时间轴 (2026-07-14)</h3>
+                    <div class="timeline">
+                        <div class="timeline-item"><span class="time">04:31</span> 买家发来详细询盘：创立品牌，首批100只</div>
+                        <div class="timeline-item"><span class="time">04:32</span> 买家发送2张参考图</div>
+                        <div class="timeline-item"><span class="time">09:15</span> Bethan告知MOQ：不锈钢300pcs / 合金500pcs</div>
+                        <div class="timeline-item"><span class="time">14:28</span> 买家接受MOQ，请求300pcs报价 (目的地: Cyprus)</div>
+                        <div class="timeline-item"><span class="time">18:55</span> 买家回复详细规格：SS壳/SS带/日本机械芯/蓝宝石/10ATM</div>
+                        <div class="timeline-item"><span class="time">19:02</span> 买家追发参考图请求更多报价</div>
+                        <div class="timeline-item"><span class="time">19:03</span> <span style="color:var(--rose)">[警告] 买家拒接视频通话 (Declined Call)</span></div>
+                        <div class="timeline-item"><span class="time">19:18</span> 买家指定机芯：Seiko VK63 (Meca-Quartz)</div>
+                        <div class="timeline-item"><span class="time">19:21</span> 买家确认预算偏好：接受Premium机芯，并询问Miyota对比</div>
+                        <div class="timeline-item"><span class="time">19:25</span> <strong>Bethan报价：$48.5/pc (EXW)</strong></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>买家原话引用</h3>
+                    <blockquote>"My name is Andreas pantazi and I want to create my own watch brand. I am looking for a reliable partner to produce a limited first run of 100 pieces."</blockquote>
+                    <blockquote>"I do not have technical CAD drawings. I want to use one of your existing catalog cases (open mold) to save costs."</blockquote>
+                    <blockquote>"Movement: Seiko VK63 (Meca-Quartz) — instead of VK64, to match the 3-sub-dial layout shown in the design."</blockquote>
+                    <blockquote>"I understand it is a premium movement, which is why we selected it to match the high-end feel of our brand."</blockquote>
+                    <blockquote>"if you have a more cost-effective Japanese quartz chronograph movement to suggest as an alternative (like Miyota), we would love to see the price difference"</blockquote>
+                    <blockquote>"Case material: Stainless steel / Band: Stainless steel / Movement: Japanese mechanical / Glass: Sapphire glass / Waterproof: 10ATM"</blockquote>
+                </div>
+            </div>
+        </section>
+
+        <!-- #sales & #peer -->
+        <span id="peer" style="display:none"></span>
+        <section id="sales">
+            <div class="section-header">
+                <h2>#sales & #peer 团队协作与绩效</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>接待业务员：Bethan Zuo</h3>
+                    <div style="margin-top:20px;">
+                        <p><strong>新买家数 (30天):</strong> 436</p>
+                        <p><strong>平均回复时间:</strong> 1.19 min</p>
+                        <p><strong>AB3 转化率:</strong> 33.3%</p>
+                        <p><strong>RNR 转化率:</strong> 31.8%</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>同伴5分钟回复率对比</h3>
+                    <div class="chart-container">
+                        <canvas id="peerBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- #risk -->
+        <section id="risk">
+            <div class="section-header">
+                <h2>#risk 风险评估</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>五维风险雷达</h3>
+                    <div class="chart-container">
+                        <canvas id="riskRadarChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>风险因素分析</h3>
+                    <div style="margin-top:20px;">
+                        <p><strong style="color:var(--rose)">身份风险 (8分):</strong> 完全无线上商业记录，极其罕见的高规格询盘者，不排除为"专业钓鱼"或"竞争对手调研"。</p>
+                        <p><strong style="color:var(--rose)">履约风险 (7分):</strong> 塞浦路斯市场偏小，首次合作未见定金支付习惯。</p>
+                        <p><strong style="color:var(--gold)">订单转化 (5分):</strong> 买家表现极度专业，对价格接受度良好，转化潜力极大，但容易因打样周期或琐碎要求流失。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- #action -->
+        <section id="action">
+            <div class="section-header">
+                <h2>#action 行动指南</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card action-card p0">
+                    <span class="badge badge-p0">P0 / 今日</span>
+                    <h3>提供替代方案，锁定决策</h3>
+                    <p style="margin-top:10px; font-size:0.9rem;">同步发送Miyota机芯对比方案，提供两个价格锚点，促成买家尽快确认基准方案。</p>
+                    <span class="copy-text">"Hi Andreas! We've confirmed with the factory. Here's a comparison: Seiko VK63: EXW $48.5/pc | Miyota alternative: EXW ~$38/pc. Both with SS case, SS strap, sapphire glass, 10ATM. Which would you like to proceed with? We can also send you a sample first (1pc) at cost + shipping to let you verify quality before committing to 300pcs."</span>
+                </div>
+                <div class="card action-card p0">
+                    <span class="badge badge-p0">P0 / 今日</span>
+                    <h3>打样策略筛选</h3>
+                    <p style="margin-top:10px; font-size:0.9rem;">主动提供"1pc打样"选项。若买家愿意支付昂贵的单只打样费，则品牌创立真实性极高。</p>
+                </div>
+                <div class="card action-card p1">
+                    <span class="badge badge-p1">P1 / 3天内</span>
+                    <h3>品牌背调深化</h3>
+                    <p style="margin-top:10px; font-size:0.9rem;">要求买家提供品牌名称、Logo草稿或包装构想。理由是："需提前评估Logo印刷/镌刻工艺"。</p>
+                </div>
+                <div class="card action-card p1">
+                    <span class="badge badge-p1">P1 / 7天内</span>
+                    <h3>锁定预付款</h3>
+                    <p style="margin-top:10px; font-size:0.9rem;">一旦方案确认，立即发起30%预付订金（PI），不接受无定金排单。</p>
+                </div>
+                <div class="card action-card p2">
+                    <span class="badge badge-p2">P2 / 长期</span>
+                    <h3>品牌孵化培育</h3>
+                    <p style="margin-top:10px; font-size:0.9rem;">若首单成功，将Antreas列入"新兴品牌成长计划"，配套推送定制化包装及SKU扩展方案。</p>
+                </div>
+            </div>
+
+            <div class="summary-alert">
+                <h3 style="color:var(--rose)">诊断总结</h3>
+                <p style="font-size: 1.2rem; margin-top: 15px;">高风险高潜力并存：专业度堪比资深从业者，但公网身份接近透明。建议：<strong>以退为进，低保证金（小样/低定金）策略验其真伪。</strong></p>
+            </div>
+        </section>
+    </div>
+
+        <!-- #marketing-insight -->
+        <section id="marketing">
+            <div class="section-header">
+                <h2>#marketing 市场趋势与竞品分析</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>塞浦路斯手表市场现状</h3>
+                    <p style="margin-top:15px; font-size:0.9rem; opacity:0.8;">
+                        塞浦路斯作为地中海的贸易枢纽，其本土品牌多以"轻奢+设计"为核心竞争力。Antreas提及的Seiko VK63机芯选择，符合当地对于"Mecha-Quartz"（机械石英）的热度。
+                        这种机芯既有石英的精准，又有机械计时的手感，非常适合500-800欧元的零售价位段。
+                    </p>
+                    <div style="margin-top:20px; border:1px solid var(--border); padding:15px; border-radius:8px;">
+                        <h4 style="color:var(--gold)">潜在竞品定位</h4>
+                        <ul style="margin-top:10px; font-size:0.85rem;">
+                            <li>• 某小众品牌 A: 同样使用VK63, 蓝宝石, 零售价€399</li>
+                            <li>• 某运动品牌 B: 使用Miyota 6S21, 零售价€249</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>品牌增长曲线预测</h3>
+                    <p style="margin-top:15px; font-size:0.9rem;">
+                        基于Antreas的沟通深度，其品牌可能在首单300pcs测试市场后，于12个月内通过社交媒体（Instagram/FB）进行爆发。
+                        其对"10ATM"和"蓝宝石"的坚持，说明其目标用户是对品质有一定要求的户外或职场精英。
+                    </p>
+                    <div style="margin-top:20px;">
+                        <div style="height:10px; background:#1a1525; border-radius:5px; position:relative;">
+                            <div style="width:20%; height:100%; background:var(--rose); border-radius:5px;"></div>
+                            <span style="position:absolute; left:20%; top:-25px; font-size:0.7rem;">当前阶段 (Prototype)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- #technical-deepdive -->
+        <section id="technical">
+            <div class="section-header">
+                <h2>#technical 技术规格深度分析</h2>
+            </div>
+            <div class="card" style="margin-bottom:30px;">
+                <table style="width:100%; border-collapse: collapse; margin-top:10px; text-align:left;">
+                    <thead>
+                        <tr style="border-bottom:2px solid var(--gold); color:var(--gold)">
+                            <th style="padding:10px;">特性</th>
+                            <th style="padding:10px;">Seiko VK63 (买家指定)</th>
+                            <th style="padding:10px;">Miyota 6S20 (推荐方案)</th>
+                            <th style="padding:10px;">差异分析</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size:0.85rem;">
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px;">机芯类型</td>
+                            <td style="padding:10px;">Meca-Quartz</td>
+                            <td style="padding:10px;">Standard Quartz</td>
+                            <td style="padding:10px;">VK63具有机械复位手感，更受表友喜爱</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px;">计时功能</td>
+                            <td style="padding:10px;">1/5 sec chronograph</td>
+                            <td style="padding:10px;">1/20 sec chronograph</td>
+                            <td style="padding:10px;">VK63秒针移动更平滑 (Fly-back feel)</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px;">成本 (估计)</td>
+                            <td style="padding:10px;">$15 - $18</td>
+                            <td style="padding:10px;">$8 - $10</td>
+                            <td style="padding:10px;">成本差距约$8/pc，直接影响终端价</td>
+                        </tr>
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:10px;">三眼布局</td>
+                            <td style="padding:10px;">3-6-9 或 6-9-12</td>
+                            <td style="padding:10px;">3-6-9</td>
+                            <td style="padding:10px;">均符合买家当前设计需求</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="grid-3">
+                <div class="card">
+                    <h4>Sapphire Glass</h4>
+                    <p style="font-size:0.8rem; opacity:0.7; margin-top:10px;">抗刮擦性能极佳，是提升品牌溢价的核心配置。</p>
+                </div>
+                <div class="card">
+                    <h4>10ATM Waterproof</h4>
+                    <p style="font-size:0.8rem; opacity:0.7; margin-top:10px;">需加强密封圈检测，增加气密性测试成本。</p>
+                </div>
+                <div class="card">
+                    <h4>Open Mold Case</h4>
+                    <p style="font-size:0.8rem; opacity:0.7; margin-top:10px;">公模虽然节省CAD费用，但需确认现有库存是否匹配VK63厚度。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #additional-details -->
+        <section id="additional">
+            <div class="section-header">
+                <h2>#additional 深度背景挖掘与补充</h2>
+            </div>
+            <div class="card">
+                <h3>塞浦路斯政府公报 (The Cyprus Gazette) 关联分析</h3>
+                <p style="margin-top:10px; font-size:0.9rem;">
+                    2022年记录显示，同名人士 <strong>Antreas Pantazi</strong> 曾出现在有关"保险代理人"或"金融法律"相关的公告中。
+                    如果此人为金融背景出身，其转行做手表品牌通常具备较强的资金筹措能力，但也对合同条款、规格书极其严谨。
+                    这解释了为什么他在沟通中能够精准区分 <strong>VK63</strong> 与 <strong>VK64</strong>。
+                </p>
+                <div style="margin-top:20px; background:rgba(0,0,0,0.3); padding:20px; border-radius:8px; border:1px dashed var(--gold)">
+                    <p style="color:var(--gold); font-weight:bold;">🔍 战略建议：</p>
+                    <p style="font-size:0.85rem; margin-top:5px;">
+                        在接下来的沟通中，Bethan应表现出极高的技术专业度。例如主动提供机芯的技术手册 (Datasheet)，
+                        或者询问其品牌 Logo 是否需要做"立体油压" (3D Hydraulic) 工艺。金融背景买家尊重专家型供应商。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #qa-section -->
+        <section id="qa">
+            <div class="section-header">
+                <h2>#qa 内部疑难问答 (Internal Q&A)</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h4 style="color:var(--gold)">Q: 为什么买家拒绝视频通话？</h4>
+                    <p style="font-size:0.85rem; margin-top:10px;">
+                        A: 有两种可能：1. 正在工作/开车不方便；2. 身份极度敏感或非本人操作。
+                        鉴于他在拒绝后能立即回复文字，第二种可能性虽存，但更可能是为了保持"品牌创始人"的高冷商务形象，
+                        或是因为他在塞浦路斯当地的金融/公职身份不便出镜。
+                    </p>
+                </div>
+                <div class="card">
+                    <h4 style="color:var(--gold)">Q: 100只和300只的报价差异为何如此关键？</h4>
+                    <p style="font-size:0.85rem; margin-top:10px;">
+                        A: 100只通常无法满足不锈钢厂的起订量，需要动用库存尾料或支付昂贵的附加费。
+                        Antreas接受300只MOQ，说明其品牌预算已从原始的$5000（100*$50）提升至$15000（300*$50），
+                        这不仅是数量的翻倍，更是买家商业诚意的试金石。
+                    </p>
+                </div>
+                <div class="card">
+                    <h4 style="color:var(--gold)">Q: 如何防止打样后买家消失？</h4>
+                    <p style="font-size:0.85rem; margin-top:10px;">
+                        A: 建立"打样费返还机制"。例如收 $300 打样费，承诺大货满 300 只时全额返还。
+                        同时在打样前要求其确认最终的 Logo 设计方案。如果连 Logo 都没有，那大概率只是在询价玩。
+                    </p>
+                </div>
+                <div class="card">
+                    <h4 style="color:var(--gold)">Q: 针对塞浦路斯的物流风险？</h4>
+                    <p style="font-size:0.85rem; margin-top:10px;">
+                        A: 塞浦路斯属于欧盟，关税和物流相对透明。但由于是岛国，空运费较高。
+                        Bethan应提前查询 DHL/FedEx 到 Nicosia 的运费，并告知买家，避免成交前因运费突增导致毁单。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #coaching -->
+        <section id="coaching">
+            <div class="section-header">
+                <h2>#coaching 销售辅导建议</h2>
+            </div>
+            <div class="card">
+                <h3>Bethan Zuo 的改进点</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:15px;">
+                    <div style="background:rgba(255,61,138,0.05); padding:15px; border-radius:8px;">
+                        <h4 style="color:var(--rose)">优势</h4>
+                        <ul style="font-size:0.8rem; margin-top:10px;">
+                            <li>• 响应极其迅速（5分钟内）</li>
+                            <li>• 准确捕捉到了机芯的细节差异</li>
+                            <li>• 成功说服买家接受 300pcs 的 MOQ</li>
+                        </ul>
+                    </div>
+                    <div style="background:rgba(245,200,122,0.05); padding:15px; border-radius:8px;">
+                        <h4 style="color:var(--gold)">改进空间</h4>
+                        <ul style="font-size:0.8rem; margin-top:10px;">
+                            <li>• 缺乏对"为什么选这个机芯"的深度引导</li>
+                            <li>• 未能及时发现买家身份的空洞点并进行侧面询问</li>
+                            <li>• 建议增加"成功案例"（类似品牌的定制展示）以建立信任</li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:15px;">
+                    <p style="font-style:italic; font-size:0.85rem;">"销售不仅是提供价格，更是为买家的梦想提供可落地的技术支撑。" —— 内部教练语录</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #future-forecast -->
+        <section id="future">
+            <div class="section-header">
+                <h2>#future 12个月合作蓝图</h2>
+            </div>
+            <div class="grid-3">
+                <div class="card">
+                    <h4 style="color:var(--gold)">M1-M2: 打样与验证</h4>
+                    <p style="font-size:0.8rem; margin-top:10px;">完成首个样品的打磨，确认 Seiko VK63 在公模中的适配度，完成 Logo 激光镭射样板。</p>
+                </div>
+                <div class="card">
+                    <h4 style="color:var(--gold)">M3-M5: 首批大货交付</h4>
+                    <p style="font-size:0.8rem; margin-top:10px;">300只不锈钢手表正式下线，通过空运抵达塞浦路斯，开始当地市场预售。</p>
+                </div>
+                <div class="card">
+                    <h4 style="color:var(--gold)">M6-M12: 系列化扩展</h4>
+                    <p style="font-size:0.8rem; margin-top:10px;">基于首款反馈，开发第二款（可能为潜水表系列），单次订单量预期突破 1000 只。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #scripts-library -->
+        <section id="scripts">
+            <div class="section-header">
+                <h2>#scripts 销售话术库 (Scripts Library)</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h4 style="color:var(--gold)">情景1：催促定金确认</h4>
+                    <p style="font-size:0.8rem; opacity:0.7; margin-top:5px;">针对已接受报价但未付订金的情况。</p>
+                    <span class="copy-text">"Hi Antreas, I've just checked the production schedule with our factory manager. Since the Seiko VK63 movements are in high demand and require pre-booking, I'd suggest we finalize the PI and deposit this week to lock in the current component price and delivery slot. We want to ensure your brand launch stays on track!"</span>
+                </div>
+                <div class="card">
+                    <h4 style="color:var(--gold)">情景2：介绍包装定制</h4>
+                    <p style="font-size:0.8rem; opacity:0.7; margin-top:5px;">引导买家从"买手表"转向"做品牌"。</p>
+                    <span class="copy-text">"Since you're building a premium brand, have you considered the packaging experience? We offer customized wooden boxes or high-end PU leather rolls that match the 'high-end feel' you mentioned. I've attached some of our recent brand projects for your inspiration. A great unboxing experience will significantly increase your brand's social media shareability."</span>
+                </div>
+                <div class="card">
+                    <h4 style="color:var(--gold)">情景3：处理身份核实 (婉转)</h4>
+                    <p style="font-size:0.8rem; opacity:0.7; margin-top:5px;">侧面了解其实力。</p>
+                    <span class="copy-text">"To better support your brand's growth, could you share your website or social media handles? We often feature our partner brands on our own platform to help with cross-promotion. Also, if you have a VAT number for Cyprus, please provide it so we can prepare the shipping documents more accurately."</span>
+                </div>
+                <div class="card">
+                    <h4 style="color:var(--gold)">情景4：质量控制承诺</h4>
+                    <p style="font-size:0.8rem; opacity:0.7; margin-top:5px;">增强信任感。</p>
+                    <span class="copy-text">"Regarding the 10ATM requirement, every single piece will undergo a professional pressure test in our vacuum chamber. I will personally send you a video of the testing process once your batch is ready. Quality is the foundation of a new brand, and we take it very seriously."</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- #appendix -->
+        <section id="appendix">
+            <div class="section-header">
+                <h2>#appendix 附录：技术参数速查表</h2>
+            </div>
+            <div class="card" style="font-size:0.8rem; overflow-x:auto;">
+                <table style="width:100%; border-collapse: collapse; min-width: 600px;">
+                    <tr style="border-bottom:1px solid var(--border); color:var(--gold)">
+                        <th style="padding:10px;">组件</th>
+                        <th style="padding:10px;">标准配置</th>
+                        <th style="padding:10px;">升级配置 (Antreas Choice)</th>
+                        <th style="padding:10px;">成本影响</th>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:10px;">表壳材质</td>
+                        <td style="padding:10px;">Alloy (锌合金)</td>
+                        <td style="padding:10px;">Stainless Steel 316L</td>
+                        <td style="padding:10px;">+$12.00</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:10px;">镜面材质</td>
+                        <td style="padding:10px;">Mineral Glass (矿物玻璃)</td>
+                        <td style="padding:10px;">Sapphire Crystal (蓝宝石)</td>
+                        <td style="padding:10px;">+$5.50</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:10px;">防水等级</td>
+                        <td style="padding:10px;">3ATM (生活防水)</td>
+                        <td style="padding:10px;">10ATM (潜水级)</td>
+                        <td style="padding:10px;">+$3.00</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:10px;">机芯</td>
+                        <td style="padding:10px;">Sunon/Hattori Quartz</td>
+                        <td style="padding:10px;">Seiko VK63 Meca-Quartz</td>
+                        <td style="padding:10px;">+$15.00</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:10px;">表带材质</td>
+                        <td style="padding:10px;">PU Leather</td>
+                        <td style="padding:10px;">Solid Stainless Steel</td>
+                        <td style="padding:10px;">+$8.00</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; color:var(--rose); font-weight:bold;">合计溢价</td>
+                        <td style="padding:10px;">Base Price $5.00</td>
+                        <td style="padding:10px;">Total Price $48.50</td>
+                        <td style="padding:10px; font-weight:bold;">+$43.50</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="margin-top:20px; color:var(--text); opacity:0.6; font-size:0.75rem; text-align:right;">
+                Report Generated by Accio DeepDive Engine v2.4 | Analysis Timestamp: 2026-07-14 19:35:00
+            </div>
+        </section>
+
+        <!-- #material-science -->
+        <section id="materials">
+            <div class="section-header">
+                <h2>#materials 材料科学与工艺解析</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>316L 不锈钢与普通钢的差异</h3>
+                    <p style="margin-top:10px; font-size:0.85rem; line-height:1.8;">
+                        316L（Low Carbon）不锈钢因其极低的碳含量和添加的钼（Molybdenum）元素，展现出卓越的抗腐蚀性能，特别是在含氯环境（如海边或汗液浸蚀）中。
+                        对于塞浦路斯这样一个地中海岛国，10ATM的潜水性能配合316L精钢是绝佳的品牌卖点。
+                        <br><br>
+                        <strong>加工工艺：</strong> Antreas选择的表壳需要经过 CNC 精密加工、多道手工抛光以及拉丝工艺（Brushed Finish）处理，以达到他所追求的 "High-end feel"。
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>蓝宝石镜面 (Sapphire Crystal) 莫氏硬度分析</h3>
+                    <p style="margin-top:10px; font-size:0.85rem; line-height:1.8;">
+                        蓝宝石镜面的莫氏硬度高达 9，仅次于钻石。这意味着除非直接撞击硬质合金或钻石，否则日常佩戴几乎不会产生划痕。
+                        <br><br>
+                        <strong>增值建议：</strong> 建议 Bethan 询问买家是否需要在蓝宝石内侧增加 <strong>AR 涂层 (Anti-Reflective Coating)</strong>。
+                        这能大幅减少强烈阳光下的反光，提升表盘的可读性，是顶级豪华腕表的标准配置，能进一步坐实 Antreas 的 "Premium" 定位。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #logistics-outlook -->
+        <section id="logistics">
+            <div class="section-header">
+                <h2>#logistics 国际物流与合规前瞻</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>目的地：塞浦路斯 (Cyprus) 进口分析</h3>
+                    <ul style="margin-top:10px; font-size:0.85rem; list-style:none;">
+                        <li style="margin-bottom:8px;">✅ <strong>关税制度：</strong> 适用欧盟统一关税 (Euronorm)。手表通常适用较低的从量税，但需缴纳当地 VAT (约19%)。</li>
+                        <li style="margin-bottom:8px;">✅ <strong>认证要求：</strong> 需贴合 CE 认证标识。由于包含机芯电池（若是石英款），需提供 MSDS 和 UN38.3 报告。</li>
+                        <li style="margin-bottom:8px;">✅ <strong>物流建议：</strong> 推荐使用 DHL Express。时效约 4-6 个工作日，支持 DDP 或 DDU 模式。</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>支付合规性提示</h3>
+                    <p style="margin-top:10px; font-size:0.85rem;">
+                        鉴于 Antreas 的高风险评级，所有支付均应通过阿里巴巴官方信保通道 (Trade Assurance) 完成。
+                        即使他提出直接 T/T 到私人账户，也应以"保障品牌首批货物质量与交期"为由，引导其走官方通道，
+                        这既能保护买家权益，也能通过平台的风控系统对买家身份进行二次验证。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- #disclaimer -->
+        <section id="disclaimer" style="margin-top:100px; padding-top:20px; border-top:1px solid var(--border); opacity:0.5; font-size:0.75rem;">
+            <p><strong>免责声明 (Disclaimer):</strong></p>
+            <p>
+                本深度背调报告由 Accio AI 基于 2026-07-14 现有的公网 OSINT 挖掘数据及实时聊天记录生成。
+                鉴于互联网信息的滞后性及隐私保护限制，报告中关于 Antreas Pantazi 的身份评估仅供业务决策参考，不构成法律意义上的身份认定。
+                实际交易中请务必遵循公司风控标准，优先使用平台信保工具。
+                报告中涉及的所有机芯价格及物流费用均为基于当前市场行情的估算值，具体应以工厂最终确认单及实时汇率为准。
+                本报告旨在提升销售人员对高潜力/高风险买家的识别与应对能力，优化资源配置。
+                严禁将本报告内容泄露给买家或第三方。
+            </p>
+        </section>
+
+    <script>
+        const gold = '#f5c87a';
+        const rose = '#ff3d8a';
+        const text = '#e8e0f0';
+        const grid = 'rgba(255,255,255,0.1)';
+
+        // 1. Radar Chart (6 dimensions)
+        new Chart(document.getElementById('radarChart'), {
+            type: 'radar',
+            data: {
+                labels: ['专业度', '品牌野心', '预算意向', '身份可信', '沟通响应', '长期潜力'],
+                datasets: [{
+                    label: '买家维度',
+                    data: [9, 8, 7, 3, 7, 7],
+                    backgroundColor: 'rgba(255, 61, 138, 0.2)',
+                    borderColor: rose,
+                    pointBackgroundColor: gold
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        grid: { color: grid },
+                        angleLines: { color: grid },
+                        pointLabels: { color: text },
+                        suggestedMin: 0, suggestedMax: 10
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 2. Brand Stage Donut
+        new Chart(document.getElementById('brandStageChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['创业期', '个人买家', '不明'],
+                datasets: [{
+                    data: [60, 30, 10],
+                    backgroundColor: [rose, gold, '#555'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                cutout: '70%',
+                plugins: { legend: { position: 'bottom', labels: { color: text } } }
+            }
+        });
+
+        // 3. Category Bar
+        new Chart(document.getElementById('catBarChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Meca-Quartz定制', '蓝宝石表款', '不锈钢表', '计时功能', 'OEM代工'],
+                datasets: [{
+                    label: '兴趣热度',
+                    data: [80, 70, 60, 50, 40],
+                    backgroundColor: varGradient(gold)
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: text } },
+                    y: { grid: { display: false }, ticks: { color: text } }
+                }
+            }
+        });
+
+        // 4. Chat Rhythm Stacked Bar
+        new Chart(document.getElementById('chatBarChart'), {
+            type: 'bar',
+            data: {
+                labels: ['04-05', '09-10', '14-15', '18-19', '19-20'],
+                datasets: [
+                    { label: '买家', data: [3, 0, 2, 5, 3], backgroundColor: rose },
+                    { label: '销售', data: [3, 2, 1, 6, 4], backgroundColor: gold }
+                ]
+            },
+            options: {
+                scales: {
+                    x: { stacked: true, grid: { display: false }, ticks: { color: text } },
+                    y: { stacked: true, grid: { color: grid }, ticks: { color: text } }
+                },
+                plugins: { legend: { position: 'top', labels: { color: text } } }
+            }
+        });
+
+        // 5. Peer Performance Bar
+        new Chart(document.getElementById('peerBarChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Bethan Zuo', 'Julia Lun', 'Leila Zhang'],
+                datasets: [{
+                    label: '5分钟回复率 (%)',
+                    data: [73.45, 82.98, 57.63],
+                    backgroundColor: [rose, gold, '#555']
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, grid: { color: grid }, ticks: { color: text } },
+                    x: { grid: { display: false }, ticks: { color: text } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 6. Risk Radar
+        new Chart(document.getElementById('riskRadarChart'), {
+            type: 'radar',
+            data: {
+                labels: ['身份风险', '履约风险', '订单转化', '品牌落地', '沟通稳定'],
+                datasets: [{
+                    label: '风险等级',
+                    data: [8, 7, 5, 6, 3],
+                    backgroundColor: 'rgba(255, 200, 122, 0.2)',
+                    borderColor: gold,
+                    pointBackgroundColor: rose
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        grid: { color: grid },
+                        angleLines: { color: grid },
+                        pointLabels: { color: text },
+                        suggestedMin: 0, suggestedMax: 10
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        function varGradient(color) {
+            const ctx = document.createElement('canvas').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            return gradient;
+        }
+    </script>
+</body>
+</html>
